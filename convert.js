@@ -4,6 +4,7 @@
 */
 
 function WordToNumber() {
+	console.log( "WordToNumber" )
 
 	/*
 		(string) language
@@ -19,7 +20,7 @@ function WordToNumber() {
 	this.validate_whitelist = [];
 	this.validate_blacklist = [];
 
-	/*
+	/*o
 		(array) languages
 			array of necessary number [ name => value ] pairs
 				for single, tens, and place separators
@@ -145,6 +146,8 @@ function WordToNumber() {
 		return array of available languages
 */
 WordToNumber.prototype.listLanguages = function() {
+	console.log( "listLanguages" )
+
 	return this.languages;
 };
 
@@ -154,6 +157,8 @@ WordToNumber.prototype.listLanguages = function() {
 		returns FALSE if it doesn't exist
 */
 WordToNumber.prototype.setLanguage = function( language ) {
+	console.log( "setLanguage ["+ language +"]" )
+
 	if ( ! this.languages[ language ] )
 		return false;
 
@@ -166,6 +171,8 @@ WordToNumber.prototype.setLanguage = function( language ) {
 		return a language's data
 */
 WordToNumber.prototype.getLanguageData = function( language ) {
+	console.log( "getLanguageData ["+ language +"]" )
+
 	return this.languages[ language ];
 };
 
@@ -174,6 +181,9 @@ WordToNumber.prototype.getLanguageData = function( language ) {
 		create or replaces a language's data
 */
 WordToNumber.prototype.updateLanguageData = function( language, data ) {
+	console.log( "updateLanguageData ["+ language +"] >>" )
+	console.log( data )
+
 	this.languages[ language ] = data;
 };
 
@@ -186,6 +196,8 @@ WordToNumber.prototype.updateLanguageData = function( language, data ) {
 		Passing a falsey value will clear thie list.
 */
 WordToNumber.prototype.setValidatorWhitelist = function( list ) {
+	console.log( "setValidatorWhitelist >>" )
+	console.log( list )
 
 	if ( ! list.length )
 		this.validate_whitelist = [];
@@ -204,6 +216,8 @@ WordToNumber.prototype.setValidatorWhitelist = function( list ) {
 		Passing a falsey value will clear thie list.
 */
 WordToNumber.prototype.setValidatorBlacklist = function( list ) {
+	console.log( "setValidatorBlacklist >>" )
+	console.log( list )
 
 	if ( ! list.length )
 		this.validate_blacklist = [];
@@ -220,6 +234,7 @@ WordToNumber.prototype.setValidatorBlacklist = function( list ) {
 		against before parsing
 */
 WordToNumber.prototype.validate = function( string ) {
+	console.log( "validate ["+ string +"]" )
 
 	if ( ! this.validate_blacklist.length )
 		for ( var i = 0; i < this.validate_blacklist.length; i++ )
@@ -246,6 +261,8 @@ WordToNumber.prototype.validate = function( string ) {
 			= 230000
 */
 WordToNumber.prototype.createNumber = function( pre_number, len ) {
+	console.log( "createNumber ["+ pre_number +"]["+ len +"]" )
+
 	var number = ( len > 0 ) ? "0".repeat( len ) : "";
 	if ( pre_number )
 		number = pre_number + number.substr( 1 );
@@ -260,6 +277,8 @@ WordToNumber.prototype.createNumber = function( pre_number, len ) {
 			= 230111
 */
 WordToNumber.prototype.appendNumber = function( pre_number, len, number ) {
+	console.log( "appendNumber ["+ pre_number +"]["+ len +"]["+ number +"]" )
+
 	var insert = this.createNumber( pre_number, len );
 	return number.substr( 0, ( number.length - insert.length ) ) + insert;
 };
@@ -272,6 +291,8 @@ WordToNumber.prototype.appendNumber = function( pre_number, len, number ) {
 			= { a: 1, b: 2, c: 4 }
 */
 WordToNumber.prototype.mergeObjects = function() {
+	console.log( "mergeObjects ["+ arguments.length +"]" )
+
 	var object = {};
 	for ( var i = 0; i < arguments.length; i++ ) {
 		for ( var index in arguments[i] ) {
@@ -293,6 +314,7 @@ WordToNumber.prototype.mergeObjects = function() {
 		// one hundred and seventy-three
 */
 WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
+	console.log( "parsePreNumber ["+ text +"]["+ do_check +"]" )
 
 	var number = false;
 	var pre_number = false;
@@ -305,7 +327,7 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
 			this.languages[ this.language ].single,
 			this.languages[ this.language ].tens
 		);
-		for ( var  key in check_array ) {
+		for ( var key in check_array ) {
 			if ( ! check_array.hasOwnProperty( key ) )
 				continue;
 			if ( this.startsWith( text, key ) ) {
@@ -356,6 +378,7 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
 		Attempts to parse a string as a single digit
 */
 WordToNumber.prototype.parseSingle = function( text ) {
+	console.log( "parseSingle ["+ text +"]" )
 
 	for ( var word in this.languages[ this.language ].single ) {
 		if ( ! this.languages[ this.language ].single.hasOwnProperty( word ) )
@@ -376,13 +399,18 @@ WordToNumber.prototype.parseSingle = function( text ) {
 		otherwise returns false;
 */
 WordToNumber.prototype.parseTens = function( text ) {
+	console.log( "parseTens ["+ text +"]" )
 
 	var number = false;
-	for ( var word in this.languages[ this.language ].tens ) {
-		if ( ! this.languages[ this.language ].tens.hasOwnProperty( word ) )
+	var tens = this.languages[ this.language ].tens;
+	console.log( tens )
+	for ( var word in tens ) {
+		if ( ! tens.hasOwnProperty( word ) )
 			continue;
-		var val = this.languages[ this.language ].tens[ word ];
+		var val = tens[ word ];
 		var match = text.split( word );
+		console.log( "match >>" )
+		console.log( match )
 
 		if ( match && match[1] ) {
 			number = val;
@@ -401,7 +429,8 @@ WordToNumber.prototype.parseTens = function( text ) {
 		attempts to parse it to numbers,
 		then returns a number or false
 */
-WordToNumber.prototype.parse = function( text ){
+WordToNumber.prototype.parse = function( text ) {
+	console.log( "parse ["+ text +"]" )
 
 	if ( ! this.validate( text ) )
 		return false;
@@ -412,8 +441,10 @@ WordToNumber.prototype.parse = function( text ){
 
 	// loop thorugh all our "large numbers" longest to shortest
 	var number = false;
-	var large = this.languages[ this.language ].large.reverse();
-	for ( var word in large ) {
+	var large = this.languages[ this.language ].large;
+	var large_keys = Object.keys( large ).reverse();
+	for ( var i = 0; i < large_keys; i++ ) {
+		var word = large_keys[ i ];
 		if ( ! large.hasOwnProperty( word ) )
 			continue;
 		var val = large[ word ];
@@ -453,6 +484,9 @@ WordToNumber.prototype.parse = function( text ){
 		Trims each element in an array
 */
 WordToNumber.prototype.trimArray = function( array ) {
+	console.log( "trimArray >>" )
+	console.log( array )
+
 	return array.map(function( x ) {
 		return x.trim();
 	});
@@ -463,14 +497,17 @@ WordToNumber.prototype.trimArray = function( array ) {
 		Trims the things like spaces and the word "and"
 */
 WordToNumber.prototype.trimSeparators = function( str ) {
-	str = str.replace( "/^([\s.,-]+)?((and)([\s.,-]+))?/i", "" );
-	return str.replace( "/(([\s.,-]+)(and)?)([\s.,-]+)?$/i", "" );
+	console.log( "trimSeparators ["+ str +"]" )
+
+	return str.replace( /^([\s.,-]+)?((and)([\s.,-]+))?/i, "" ).replace( /(([\s.,-]+)(and)?)([\s.,-]+)?$/i, "" );
 };
 
 /*
 	startsWith
 		checks if a string starts with a string
 */
-WordToNumber.prototype.startsWith = function( string, needle ) {
-	return string.match( "/^"+ needle +"/" );
+WordToNumber.prototype.startsWith = function( str, needle ) {
+	console.log( "startsWith ["+ str +"] ["+ needle +"]" )
+
+	return str.match( needle );
 };
