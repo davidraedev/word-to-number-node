@@ -226,14 +226,14 @@ WordToNumber.prototype.setValidatorBlacklist = function( list ) {
 WordToNumber.prototype.validate = function( string ) {
 
 	if ( ! this.validate_blacklist.length )
-		for ( var i = 0; i < this.validate_blacklist.length; i++ )
+		for ( let i = 0; i < this.validate_blacklist.length; i++ )
 			if ( string.match( this.validate_blacklist[ i ] ) )
 				return false;
 
 	if ( ! this.validate_whitelist )
 		return true;
 
-	for ( var i = 0; i < this.validate_whitelist.length; i++ ) {
+	for ( let i = 0; i < this.validate_whitelist.length; i++ ) {
 		if ( string.match( this.validate_whitelist[ i ] ) )
 			return true;
 	}
@@ -299,7 +299,7 @@ WordToNumber.prototype.mergeObjects = function() {
 
 		// one hundred and seventy-three
 */
-WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
+WordToNumber.prototype.parsePreNumber = function( text, do_check, do_return_word ) {
 
 	var number = false;
 	var pre_number = false;
@@ -313,8 +313,10 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
 			this.languages[ this.language ].tens
 		);
 		for ( var key in check_array ) {
+
 			if ( ! check_array.hasOwnProperty( key ) )
 				continue;
+
 			if ( this.startsWith( text, key ) ) {
 				check = true;
 				break;
@@ -328,7 +330,7 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
 
 		var matches = this.trimArray( text.split( "hundred" ) );
 		if ( matches[0].length )
-			pre_number = this.parseSingle( matches[0] );
+			pre_number = this.parseSingle( matches[0] )[0];
 
 		number = this.createNumber( pre_number, 3 );
 		post_number = this.trimSeparators( matches[1] );
@@ -348,44 +350,82 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
 
 	}
 
+	var return_word;
 	if ( ! number ) {
-		number = this.parseSingle( post_number );
+		console.log( "post_number a [%s]", post_number );
+		number = this.parseSingle( post_number )[0];
+		if ( ! isNaN( number ) && do_return_word ) {
+			console.log( "getKeyByValue [%s]", getKeyByValue( this.languages[ this.language ].single, number ) );
+			return_word = post_number.replace( new RegExp( getKeyByValue( this.languages[ this.language ].single, number ), "i" ), "" );
+		}
 	}
 	else if ( post_number ) {
-		var single = this.parseSingle( post_number );
+		console.log( "post_number b [%s]", post_number );
+		var single = this.parseSingle( post_number )[0];
 		number = this.appendNumber( single, 1, ( number ) ? number : "" );
 	}
 
+
+	if ( do_return_word ) {
+		return {
+			number: number,
+			word: return_word,
+		};
+	}
 
 	return number;
 
 };
 
+function getKeyByValue( object, value ) {
+
+	for ( var prop in object ) {
+
+		if ( ! object.hasOwnProperty( prop ) )
+			continue;
+
+		if ( object[ prop ] === value )
+			return prop;
+
+	}
+
+	return false;
+}
+
 /*
 	parseSingle
 		Attempts to parse a string as a single digit
 */
-WordToNumber.prototype.parseSingle = function( text ) {
+WordToNumber.prototype.parseSingle = function( text, all_vals ) {
 
-	var final_pos = -1,
+	let single = this.languages[ this.language ].single;
+
+	let final_pos = -1,
 		final_val = false,
-		new_pos = -1;
+		new_pos = -1,
+		remaining_text = "",
+		all_vals = all_vals || [];
 
-	for ( var word in this.languages[ this.language ].single ) {
-		if ( ! this.languages[ this.language ].single.hasOwnProperty( word ) )
+	for ( let word in single ) {
+
+		if ( ! single.hasOwnProperty( word ) )
 			continue;
-		var val = this.languages[ this.language ].single[ word ];
+
+		let val = single[ word ];
 		new_pos = text.indexOf( word );
+
 		if ( new_pos !== -1 ) {
+			let remaining_text = text.replace( new RegExp( word, "i" ), "" );
 			if ( final_pos === -1 || new_pos < final_pos ) {
-				final_pos = new_pos;
-				final_val = val;
+				if ( remaining_text.length ) {
+					all_vals.push( val );
+					return this.parseSingle( remaining_text, all_vals );
+				}
 			}
 		}
 	}
 
-
-	return final_val;
+	return ( all_vals.length ) ? all_vals : false;
 
 };
 
@@ -408,12 +448,12 @@ WordToNumber.prototype.parseTens = function( text ) {
 			var val = tens[ word ];
 			var parts = text.split( word );
 				
-			if ( parts[1] ) {
-							var single = this.parseSingle( parts[1] );
-			}
+			if ( parts[1] )
+				single = this.parseSingle( parts[1] )[0];
 		
 			if ( single !== false )
 				val = val[0] + single;
+
 			return val;
 		}
 	}
@@ -466,15 +506,29 @@ WordToNumber.prototype.parse = function( text ) {
 		}
 	}
 
+	console.log( "number [%s]", number );
+
 
 	// this is to catch any remaining numbers (tens and/or singles) at the end of the string
 	// also if the entire word-number is only single/double digit
-	pre_number_parsed = this.parsePreNumber( this.trimSeparators( text ), ( number !== false ) );
-	if ( pre_number_parsed !== false ) {
+	pre_number_parsed = this.parsePreNumber( this.trimSeparators( text ), ( number !== false ), true );
+	console.log( "text [%s]", text );
+	console.log( "pre_number_parsed [%s] [%s]", pre_number_parsed.number, pre_number_parsed.word );
+	
+	if ( pre_number_parsed.word ) {
+		let new_pre_number_parsed = this.parsePreNumber( this.trimSeparators( pre_number_parsed.word ), ( number !== false ), true );
+		console.log( "new_pre_number_parsed [%s] [%s]", new_pre_number_parsed.number, new_pre_number_parsed.word );
+		if ( ! isNaN( new_pre_number_parsed.number ) )
+			pre_number_parsed.number = new_pre_number_parsed.number;
+		console.log( "word [%s]", word );
+		console.log( "pre_number_parsed [%s] [%s]", pre_number_parsed.number, pre_number_parsed.word );
+	}
+
+	if ( pre_number_parsed.number !== false ) {
 		if ( number )
-			number = this.appendNumber( pre_number_parsed, ( pre_number_parsed.length - 1 ), number );
+			number = this.appendNumber( pre_number_parsed.number, ( pre_number_parsed.number.length - 1 ), number );
 		else
-			number = pre_number_parsed;
+			number = pre_number_parsed.number;
 	}
 
 	return number;

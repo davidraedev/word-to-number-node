@@ -93,6 +93,7 @@ describe( "Multiple word-number tests", () => {
 		});
 		
 		combined_tests.forEach( ( test ) => {
+			console.log( "[%s][%s]", test.word, test.number );
 			expect( w2n.parse( test.word ) ).to.equal( test.number );
 		});
 
