@@ -245,7 +245,7 @@ WordToNumber.prototype.validate = function( string ) {
 /*
 	createNumber
 		Creates a number with len zeros in it
-		and prepends the specified number to the in place of the first zero
+		then prepends the specified number to the in place of the first zero
 		ex. createNumber( 23, 5 )
 			= 230000
 */
@@ -260,7 +260,7 @@ WordToNumber.prototype.createNumber = function( pre_number, len ) {
 /*
 	appendNumber
 		Creates a number with len zeros in it
-			and right-aligned overwrites number with it
+			then right-aligned overwrites number with it
 		ex. appendNumber( 111, 5, 230000 )
 			= 230111
 */
@@ -273,7 +273,7 @@ WordToNumber.prototype.appendNumber = function( pre_number, len, number ) {
 /*
 	mergeObjects
 		Merges two or more objects
-			duplicate indices will be overwritten
+			duplicate indices will be overwritten with last value
 		ex. mergeObjects( { a: 1, c: 3 }, { b: 2, c: 4 } )
 			= { a: 1, b: 2, c: 4 }
 */
@@ -466,7 +466,9 @@ WordToNumber.prototype.parse = function( text ) {
 		}
 	}
 
+
 	// this is to catch any remaining numbers (tens and/or singles) at the end of the string
+	// also if the entire word-number is only single/double digit
 	pre_number_parsed = this.parsePreNumber( this.trimSeparators( text ), ( number !== false ) );
 	if ( pre_number_parsed !== false ) {
 		if ( number )
