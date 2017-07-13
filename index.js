@@ -1,3 +1,8 @@
+const BigNumber = require( "bignumber.js" );
+
+// this needs to be larger than our largest exponenent
+BigNumber.config({ EXPONENTIAL_AT: 10000 });
+
 /*
 	wordToNumber Class
 		converts human readable word-numbers into (string) digits
@@ -23,46 +28,46 @@ function WordToNumber() {
 		(array) languages
 			array of necessary number [ name => value ] pairs
 				for single, tens, and place separators
-				in the "large" category, the value for each key
-				is the total number of digits, aka the nubmer of zeros plus one
+				in the "large" category, the value for each key is
+				the total number of digits, aka the number of zeros plus one
+				so for exponents, just subtract one
 	*/
 	this.languages = {
 		english: {
 			single: {
-				zero: "0",
-				one: "1",
-				two: "2",
-				three: "3",
-				four: "4",
-				five: "5",
-				six: "6",
-				seven: "7",
-				eight: "8",
-				nine: "9"
+				zero: 0,
+				one: 1,
+				two: 2,
+				three: 3,
+				four: 4,
+				five: 5,
+				six: 6,
+				seven: 7,
+				eight: 8,
+				nine: 9,
 			},
 			tens: {
-				ten: "10",
-				eleven: "11",
-				twelve: "12",
-				thirteen: "13",
-				fourteen: "14",
-				fifteen: "15",
-				sixteen: "16",
-				seventeen: "17",
-				eighteen: "18",
-				nineteen: "19",
-				twenty: "20",
-				thirty: "30",
-				forty: "40",
-				fourty: "40",
-				fifty: "50",
-				sixty: "60",
-				seventy: "70",
-				eighty: "80",
-				ninety: "90"
+				ten: 10,
+				eleven: 11,
+				twelve: 12,
+				thirteen: 13,
+				fourteen: 14,
+				fifteen: 15,
+				sixteen: 16,
+				seventeen: 17,
+				eighteen: 18,
+				nineteen: 19,
+				twenty: 20,
+				thirty: 30,
+				forty: 40,
+				fourty: 40,
+				fifty: 50,
+				sixty: 60,
+				seventy: 70,
+				eighty: 80,
+				ninety: 90,
 			},
 			large: {
-				hundred: 3,
 				thousand: 4,
 				million: 7,
 				billion: 10,
@@ -70,21 +75,21 @@ function WordToNumber() {
 				quadrillion: 16,
 				quintillion: 19,
 				sextillion: 22,
-				septillion: 23,
+				septillion: 25,
 				octillion: 28,
 				nonillion: 31,
 				decillion: 34,
 				undecillion: 37,
 				duodecillion: 40,
-				tredecillion: 41,
+				tredecillion: 43,
 				quattuordecillion: 46,
 				quindecillion: 49,
 				sexdecillion: 52,
-				septendecillion: 53,
+				septendecillion: 55,
 				octodecillion: 58,
 				novemdecillion: 61,
 				vigintillion: 64,
-				unvigintillion:  67,
+				unvigintillion: 67,
 				duovigintillion: 70,
 				tresvigintillion: 73,
 				quattuorvigintillion: 76,
@@ -226,14 +231,14 @@ WordToNumber.prototype.setValidatorBlacklist = function( list ) {
 WordToNumber.prototype.validate = function( string ) {
 
 	if ( ! this.validate_blacklist.length )
-		for ( var i = 0; i < this.validate_blacklist.length; i++ )
+		for ( let i = 0; i < this.validate_blacklist.length; i++ )
 			if ( string.match( this.validate_blacklist[ i ] ) )
 				return false;
 
 	if ( ! this.validate_whitelist )
 		return true;
 
-	for ( var i = 0; i < this.validate_whitelist.length; i++ ) {
+	for ( let i = 0; i < this.validate_whitelist.length; i++ ) {
 		if ( string.match( this.validate_whitelist[ i ] ) )
 			return true;
 	}
@@ -243,150 +248,76 @@ WordToNumber.prototype.validate = function( string ) {
 };
 
 /*
-	createNumber
-		Creates a number with len zeros in it
-		then prepends the specified number to the in place of the first zero
-		ex. createNumber( 23, 5 )
-			= 230000
-*/
-WordToNumber.prototype.createNumber = function( pre_number, len ) {
-
-	var number = ( len > 0 ) ? "0".repeat( len ) : "";
-	if ( pre_number )
-		number = pre_number + number.substr( 1 );
-	return number;
-};
-
-/*
-	appendNumber
-		Creates a number with len zeros in it
-			then right-aligned overwrites number with it
-		ex. appendNumber( 111, 5, 230000 )
-			= 230111
-*/
-WordToNumber.prototype.appendNumber = function( pre_number, len, number ) {
-
-	var insert = this.createNumber( pre_number, len );
-	return number.substr( 0, ( number.length - insert.length ) ) + insert;
-};
-
-/*
-	mergeObjects
-		Merges two or more objects
-			duplicate indices will be overwritten with last value
-		ex. mergeObjects( { a: 1, c: 3 }, { b: 2, c: 4 } )
-			= { a: 1, b: 2, c: 4 }
-*/
-WordToNumber.prototype.mergeObjects = function() {
-
-	var object = {};
-	for ( var i = 0; i < arguments.length; i++ ) {
-		for ( var index in arguments[i] ) {
-			if ( ! arguments[i].hasOwnProperty( index ) )
-				continue;
-			object[ index ] = arguments[i][ index ];
-		}
-	}
-	return object;
-};
-
-/*
-	parsePreNumber
-		Attempts to parse a string and return the hundreds number for it
-		This is used to generate the amount for each number separator ( thousand, million... )
-		Will match hundreds, tens, and singles
-		Returns number or false
-
-		// one hundred and seventy-three
-*/
-WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
-
-	var number = false;
-	var pre_number = false;
-	var post_number = text;
-
-	if ( do_check ) {
-		var check = false;
-		var check_array = this.mergeObjects(
-			{ "hundred": 1 },
-			this.languages[ this.language ].single,
-			this.languages[ this.language ].tens
-		);
-		for ( var key in check_array ) {
-			if ( ! check_array.hasOwnProperty( key ) )
-				continue;
-			if ( this.startsWith( text, key ) ) {
-				check = true;
-				break;
-			}
-		}
-		if ( ! check )
-			return false;
-	}
-
-	if ( text.indexOf( "hundred" ) !== -1 ) {
-
-		var matches = this.trimArray( text.split( "hundred" ) );
-		if ( matches[0].length )
-			pre_number = this.parseSingle( matches[0] );
-
-		number = this.createNumber( pre_number, 3 );
-		post_number = this.trimSeparators( matches[1] );
-
-	}
-
-	if ( post_number.length ) {
-
-		var tens = this.parseTens( post_number );
-		if ( tens.length ) {
-			if ( number )
-				number = this.appendNumber( tens, 1, ( number ) ? number : "" );
-			else
-				number = tens;
-			post_number = false;
-		}
-
-	}
-
-	if ( ! number ) {
-		number = this.parseSingle( post_number );
-	}
-	else if ( post_number ) {
-		var single = this.parseSingle( post_number );
-		number = this.appendNumber( single, 1, ( number ) ? number : "" );
-	}
-
-
-	return number;
-
-};
-
-/*
 	parseSingle
 		Attempts to parse a string as a single digit
 */
 WordToNumber.prototype.parseSingle = function( text ) {
 
-	var final_pos = -1,
-		final_val = false,
-		new_pos = -1;
+	let singles = this.languages[ this.language ].single;
+	let list = [];
+	for ( let word in singles ) {
 
-	for ( var word in this.languages[ this.language ].single ) {
-		if ( ! this.languages[ this.language ].single.hasOwnProperty( word ) )
+		if ( ! singles.hasOwnProperty( word ) )
 			continue;
-		var val = this.languages[ this.language ].single[ word ];
-		new_pos = text.indexOf( word );
-		if ( new_pos !== -1 ) {
-			if ( final_pos === -1 || new_pos < final_pos ) {
-				final_pos = new_pos;
-				final_val = val;
+
+		let val = new BigNumber( singles[ word ] );
+		while ( ( pos = text.indexOf( word ) ) !== -1 ) {
+			let break_pre = [];
+			let parts = this.splitOne( text, word );
+			let post;
+			let pre_word;
+			let post_word;
+
+			if ( parts[0] && parts.length > 1 )
+				pre_word = parts[0];
+			else
+				post_word = parts[0];
+				
+			if ( parts[1] )
+				post_word = parts[1];
+
+			// if we have a pre-word, and it parses, then it is a separate number
+			if ( pre_word ) {
+				break_pre = this.parseSingle( pre_word );
+				if ( break_pre.length )
+					list = list.concat( break_pre );
+				text = text.replace( pre_word, "" );
 			}
+
+			if ( post_word ) {
+				post = this.parseSingle( post_word );
+				text = text.replace( post_word, "" );
+			}
+
+			list.push( val.toString() );
+
+			if ( post && post.length ) {
+				list = list.concat( post );
+			}
+
+			text = text.replace( word, "" );
 		}
 	}
 
+	return list;
 
-	return final_val;
+};
 
+/*
+	splitOne
+		split the first occurrence of a string within a string
+			this is differnet from string.split( needle, 1 ), 
+			because it returns the entire last half of the string,
+			not just up to the next match
+*/
+WordToNumber.prototype.splitOne = function( haystack, string ) {
+	let pos = haystack.indexOf( string );
+	if ( pos !== -1 ) {
+		let first_half = haystack.slice( 0, pos );
+		let last_half = haystack.slice( ( pos + string.length ) );
+		return [ first_half, last_half ];
+	}
+	return [];
 };
 
 /*
@@ -397,117 +328,240 @@ WordToNumber.prototype.parseSingle = function( text ) {
 */
 WordToNumber.prototype.parseTens = function( text ) {
 
-	var number = false;
-	var tens = this.languages[ this.language ].tens;
-	var single = false;
-	for ( var word in tens ) {
-			if ( ! tens.hasOwnProperty( word ) )
+	let tens = this.languages[ this.language ].tens;
+	let list = [];
+	for ( let word in tens ) {
+
+		if ( ! tens.hasOwnProperty( word ) )
 			continue;
 
-		if ( (new RegExp( word )).test( text ) ) {
-			var val = tens[ word ];
-			var parts = text.split( word );
+		let val = new BigNumber( tens[ word ] );
+		while ( ( pos = text.indexOf( word ) ) !== -1 ) {
+			let break_pre = [];
+			let parts = this.splitOne( text, word );
+			let post;
+			let pre_word;
+			let post_word;
+
+			if ( parts[0] && parts.length > 1 )
+				pre_word = parts[0];
+			else
+				post_word = parts[0];
 				
-			if ( parts[1] ) {
-							var single = this.parseSingle( parts[1] );
+			if ( parts[1] )
+				post_word = parts[1];
+
+			// if we have a pre-word, and it parses, then it is a separate number
+			if ( pre_word ) {
+				break_pre = this.parseTens( pre_word );
+				if ( break_pre.length )
+					list = list.concat( break_pre );
+				text = text.replace( pre_word, "" );
 			}
-		
-			if ( single !== false )
-				val = val[0] + single;
-			return val;
+
+			if ( post_word ) {
+				post = this.parseTens( post_word );
+				text = text.replace( post_word, "" );
+			}
+
+			let post_push;
+			if ( post && post.length ) {
+				if ( post[0] <= 9 && val >= 20 ) {
+					val = val.plus( post[0] );
+					if ( post.length > 1 )
+						post_push = post.splice( 1 );
+				}
+				else {
+					post_push = post;
+				}
+			}
+
+			list.push( val.toString() );
+
+			if ( post_push ) {
+				list = list.concat( post_push );
+			}
+
+			text = text.replace( word, "" );
 		}
 	}
 
-	return false;
+	let singles = this.parseSingle( text );
+
+	list = list.concat( singles );
+
+	return list;
+};
+
+/*
+	parseHundreds
+		Attempts to parse a string for the hundreds
+*/
+WordToNumber.prototype.parseHundreds = function( text, hundred ) {
+
+	let original = ( " " + text ).slice( 1 );
+	let list = [];
+
+	let word = hundred || "hundred";
+	while ( ( pos = text.indexOf( word ) ) !== -1 ) {
+		let val = new BigNumber( 100 );
+		let break_pre = [];
+		let parts = this.splitOne( text, word );
+		let post;
+		let pre_word;
+		let post_word;
+
+		if ( parts[0] && parts.length > 1 )
+			pre_word = parts[0];
+		else
+			post_word = parts[0];
+			
+		if ( parts[1] )
+			post_word = parts[1];
+
+		if ( pre_word ) {
+			break_pre = this.parseHundreds( pre_word ).list;
+			if ( break_pre.length ) {
+				if ( break_pre.length > 1 ) {
+					for ( let i = 0; i < ( break_pre.length - 1 ); i++ ) {
+						list = list.concat( break_pre[ i ] );
+					}
+				}
+				if ( break_pre[ break_pre.length - 1 ] > 9 ) {
+					list = list.concat( break_pre[ break_pre.length - 1 ] );
+				}
+				else {
+					val = val.times( break_pre[ break_pre.length - 1 ] );
+				}
+			}
+			text = text.replace( pre_word, "" );
+		}
+
+		if ( post_word ) {
+			post = this.parseHundreds( post_word ).list;
+			text = text.replace( post_word, "" );
+		}
+
+		if ( post && post.length ) {
+			if ( post[0] <= 99 ) {
+				val = val.plus( post[0] );
+			}
+		}
+
+		list.push( val.toString() );
+
+		if ( post && post.length > 1 ) {
+			post.splice( 0, 1 );
+			list = list.concat( post );
+		}
+
+		text = text.replace( word, "" );
+	}
+
+	let tens = this.parseTens( text );
+
+	list = list.concat( tens );
+
+	return {
+		list: list,
+		text: text,
+		original: original,
+	};
+};
+
+WordToNumber.prototype.parseLarge = function( text ) {
+
+	let list = [];
+
+	let large = this.languages[ this.language ].large;
+	let large_keys = Object.keys( large ).sort( ( a, b ) => {
+		return large[ b ] - large[ a ];
+	});
+
+	for ( let i = 0; i < large_keys.length; i++ ) {
+
+		let word = large_keys[ i ];
+
+		if ( ! large.hasOwnProperty( word ) )
+			continue;
+
+		while ( ( pos = text.indexOf( word ) ) !== -1 ) {
+			let val = new BigNumber( 10 ).toPower( ( large[ word ] - 1 ) );
+			let break_pre = [];
+			let parts = this.splitOne( text, word );
+			let post;
+			let pre_word;
+			let post_word;
+
+			if ( parts[0] && parts.length > 1 )
+				pre_word = parts[0];
+			else
+				post_word = parts[0];
+				
+			if ( parts[1] )
+				post_word = parts[1];
+
+			if ( pre_word ) {
+				break_pre = this.parseLarge( pre_word );
+				if ( break_pre.length ) {
+
+					if ( break_pre.length > 1 )
+						for ( let i = 0; i < ( break_pre.length - 1 ); i++ )
+							list = list.concat( break_pre[ i ] );
+
+					if ( break_pre[ break_pre.length - 1 ] > 999 )
+						list = list.concat( break_pre[ break_pre.length - 1 ] );
+					else
+						val = val.times( break_pre[ break_pre.length - 1 ] );
+					
+				}
+				text = text.replace( pre_word, "" );
+			}
+
+			if ( post_word ) {
+				post = this.parseLarge( post_word );
+				text = text.replace( post_word, "" );
+			}
+			
+			if ( post && post.length ) {
+				if ( post[0] <= ( val - 1 ) ) {
+					val = val.plus( post[0] );
+				}
+			}
+
+			list.push( val.toString() );
+
+			if ( post && post.length > 1 ) {
+				post.splice( 0, 1 );
+				list = list.concat( post );
+			}
+
+			text = text.replace( word, "" );
+		}
+	}
+
+	let hundreds = this.parseHundreds( text );
+
+	text = text.replace( hundreds.original, "" );
+
+	list = list.concat( hundreds.list );
+
+	return list;
 };
 
 /*
 	parse
-		The main function of this class.
-		Takes a string as input,
-		attempts to parse it to numbers,
-		then returns a number or false
+		Attempt to parse a string to an as many word-numbers as it can find
+		or false
 */
 WordToNumber.prototype.parse = function( text ) {
 
 	if ( ! this.validate( text ) )
 		return false;
 
-	var pre_number_parsed;
-
 	text = text.toLowerCase();
 
-	// loop thorugh all our "large numbers" longest to shortest
-	var number = false;
-	var large = this.languages[ this.language ].large;
-	var large_keys = Object.keys( large ).sort( ( a, b ) => {
-		return large[ b ] - large[ a ];
-	});
-	for ( let i = 0; i < large_keys.length; i++ ) {
-		var word = large_keys[ i ];
-			if ( ! large.hasOwnProperty( word ) )
-			continue;
-		var val = large[ word ];
-
-		if ( text.indexOf( word ) !== -1 ) {
-
-			// parse the "pre-number" eg. (one hundred)
-			// and add it to our full number in the current "large" place
-			var match = this.trimArray( text.split( word ) );
-			var pre_number = ( match && match[0] ) ? match[0] : false;
-			text = match[1];
-
-			pre_number_parsed = ( this.parsePreNumber( this.trimSeparators( pre_number ), ( number !== false ) ) ) || "";
-
-			if ( number === false )
-				number = this.createNumber( pre_number_parsed, val );
-			else
-				number = this.appendNumber( pre_number_parsed, val, number );
-		}
-	}
-
-
-	// this is to catch any remaining numbers (tens and/or singles) at the end of the string
-	// also if the entire word-number is only single/double digit
-	pre_number_parsed = this.parsePreNumber( this.trimSeparators( text ), ( number !== false ) );
-	if ( pre_number_parsed !== false ) {
-		if ( number )
-			number = this.appendNumber( pre_number_parsed, ( pre_number_parsed.length - 1 ), number );
-		else
-			number = pre_number_parsed;
-	}
-
-	return number;
-};
-
-
-/*
-	trimArray
-		Trims each element in an array
-*/
-WordToNumber.prototype.trimArray = function( array ) {
-
-	return array.map(function( x ) {
-		return x.trim();
-	});
-};
-
-/*
-	trimSeparators
-		Trims the things like spaces and the word "and"
-*/
-WordToNumber.prototype.trimSeparators = function( str ) {
-
-	return str.replace( /^([\s.,-]+)?((and)([\s.,-]+))?/i, "" ).replace( /(([\s.,-]+)(and)?)([\s.,-]+)?$/i, "" );
-};
-
-/*
-	startsWith
-		checks if a string starts with a string
-*/
-WordToNumber.prototype.startsWith = function( str, needle ) {
-
-	return str.match( needle );
+	return this.parseLarge( text );
 };
 
 module.exports = WordToNumber;
