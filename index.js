@@ -299,7 +299,7 @@ WordToNumber.prototype.mergeObjects = function() {
 
 		// one hundred and seventy-three
 */
-WordToNumber.prototype.parsePreNumber = function( text, do_check, do_return_word ) {
+WordToNumber.prototype.parsePreNumber = function( text, do_check ) {
 
 	var number = false;
 	var pre_number = false;
@@ -330,9 +330,16 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check, do_return_word
 
 		var matches = this.trimArray( text.split( "hundred" ) );
 		if ( matches[0].length )
-			pre_number = this.parseSingle( matches[0] )[0];
+			pre_number = this.parseSingle( matches[0] );
 
-		number = this.createNumber( pre_number, 3 );
+		if ( pre_number.length > 1 ) {
+			return {
+				break_number: pre_number[0],
+				word: text,
+			}
+		}
+
+		number = this.createNumber( pre_number[0], 3 );
 		post_number = this.trimSeparators( matches[1] );
 
 	}
@@ -354,7 +361,13 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check, do_return_word
 	if ( ! number ) {
 		console.log( "post_number a [%s]", post_number );
 		number = this.parseSingle( post_number )[0];
-		if ( ! isNaN( number ) && do_return_word ) {
+		if ( number.length > 1 ) {
+			return {
+				break_number: number[0],
+				word: text,
+			}
+		}
+		if ( ! isNaN( number ) ) {
 			console.log( "getKeyByValue [%s]", getKeyByValue( this.languages[ this.language ].single, number ) );
 			return_word = post_number.replace( new RegExp( getKeyByValue( this.languages[ this.language ].single, number ), "i" ), "" );
 		}
@@ -362,6 +375,12 @@ WordToNumber.prototype.parsePreNumber = function( text, do_check, do_return_word
 	else if ( post_number ) {
 		console.log( "post_number b [%s]", post_number );
 		var single = this.parseSingle( post_number )[0];
+		if ( number.length > 1 ) {
+			return {
+				break_number: number[0],
+				word: text,
+			}
+		}
 		number = this.appendNumber( single, 1, ( number ) ? number : "" );
 	}
 
@@ -396,38 +415,63 @@ function getKeyByValue( object, value ) {
 	parseSingle
 		Attempts to parse a string as a single digit
 */
-WordToNumber.prototype.parseSingle = function( text, all_vals ) {
+WordToNumber.prototype.parseSingle = function( text ) {
+	console.log( "parseSingle [%s]", text )
 
 	let single = this.languages[ this.language ].single;
 
-	let final_pos = -1,
-		final_val = false,
-		new_pos = -1,
-		remaining_text = "",
-		all_vals = all_vals || [];
+	let list = [];
 
 	for ( let word in single ) {
 
 		if ( ! single.hasOwnProperty( word ) )
 			continue;
 
-		let val = single[ word ];
-		new_pos = text.indexOf( word );
+		let number = single[ word ];
 
-		if ( new_pos !== -1 ) {
-			let remaining_text = text.replace( new RegExp( word, "i" ), "" );
-			if ( final_pos === -1 || new_pos < final_pos ) {
-				if ( remaining_text.length ) {
-					all_vals.push( val );
-					return this.parseSingle( remaining_text, all_vals );
-				}
-			}
+		while ( ( pos = text.indexOf( word ) ) !== -1 ) {
+			list.push( number );
+			text = text.replace( new RegExp( word, "i" ), "" );
 		}
 	}
 
-	return ( all_vals.length ) ? all_vals : false;
+	console.log( "list, ", list )
+
+	return list;
 
 };
+
+/*
+	replaceOne
+		replace a single (first) instance of a string within a string
+*/
+WordToNumber.prototype.replaceOne = function( haystack, string ) {
+	let pos = haystack.indexOf( string );
+	if ( pos !== -1 ) {
+		let first_half = haystack.slice( 0, pos );
+		let last_half = haystack.slice( ( pos + haystack.length ) );
+		return first_half + last_half;
+	}
+	return haystack;
+}
+
+/*
+	splitOne
+		split the first occurrence of a string within a string
+			this is differnet from string.split( needle, 1 ), 
+			because it returns the entire last half of the string,
+			not just up to the next match
+*/
+WordToNumber.prototype.splitOne = function( haystack, string ) {
+	console.log( "splitOne [%s] [%s]", haystack, string )
+	let pos = haystack.indexOf( string );
+	if ( pos !== -1 ) {
+		let first_half = haystack.slice( 0, pos );
+		let last_half = haystack.slice( ( pos + string.length ) );
+		return [ first_half, last_half ];
+	}
+	return [];
+}
 
 /*
 	parseTens
@@ -436,29 +480,75 @@ WordToNumber.prototype.parseSingle = function( text, all_vals ) {
 		otherwise will return false;
 */
 WordToNumber.prototype.parseTens = function( text ) {
+	console.log( "parseTens [%s]", text )
 
-	var number = false;
-	var tens = this.languages[ this.language ].tens;
-	var single = false;
-	for ( var word in tens ) {
-			if ( ! tens.hasOwnProperty( word ) )
+	let number = false;
+	let tens = this.languages[ this.language ].tens;
+	let list = [];
+	for ( let word in tens ) {
+
+		if ( ! tens.hasOwnProperty( word ) )
 			continue;
 
-		if ( (new RegExp( word )).test( text ) ) {
-			var val = tens[ word ];
-			var parts = text.split( word );
+		let val = tens[ word ];
+		while ( ( pos = text.indexOf( word ) ) !== -1 ) {
+			console.log( "text >>", text, word );
+			let break_pre = [];
+			let parts = this.splitOne( text, word );
+			let post;
+			let pre_word;
+			let post_word;
+
+			console.log( "parts >>", parts );
+
+			if ( parts[0] && parts.length > 1 )
+				pre_word = parts[0];
+			else
+				post_word = parts[0];
 				
 			if ( parts[1] )
-				single = this.parseSingle( parts[1] )[0];
-		
-			if ( single !== false )
-				val = val[0] + single;
+				post_word = parts[1];
 
-			return val;
+			// if we have a pre-word, and it parses, then it is a separate number
+			if ( pre_word ) {
+				console.log( "break_pre" )
+				break_pre = this.parseTens( pre_word );
+				if ( break_pre.length )
+					list = list.concat( break_pre );
+				text = text.replace( pre_word, "" );
+			}
+
+			if ( post_word ) {
+				console.log( "post_word" )
+				post = this.parseTens( post_word );
+				text = text.replace( post_word, "" );
+				console.log( "post, ", post )
+			}
+
+			if ( post && post.length ) {
+				if ( post[0] <= 9 ) {
+					val = parseInt( val ) + parseInt( post[0] );
+				}
+			}
+
+
+			list.push( val );
+
+			if ( post && post.length > 1 ) {
+				post.splice( 0, 1 );
+				console.log( "post >> ", post )
+				list = list.concat( post );
+			}
+
+			text = text.replace( word, "" );
 		}
 	}
 
-	return false;
+	let singles = this.parseSingle( text );
+
+	list = list.concat( singles );
+
+	return list;
 };
 
 /*
