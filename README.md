@@ -12,7 +12,8 @@ WordToNumber lets you parse a string for all of its word-numbers into their digi
 - [Validation](#validation)
 
 ## Usage
-The main function you'll be using with WordToNumber is the parse function
+The main function you'll be using with WordToNumber is the parse function.
+
 It takes a string, and will return an array of all the numbers it finds in their digit form, as a string
 
 ```js
