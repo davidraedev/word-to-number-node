@@ -1,9 +1,13 @@
 # word-to-number-node [![Build Status](https://travis-ci.org/daraeman/word-to-number-node.svg?branch=master)](https://travis-ci.org/daraeman/word-to-number-node)
 
 ## Convert any word-number to a number
-WordToNumber lets you parse a string for all of its word-numbers into their digit representation.
+WordToNumber lets you parse any string for all of its word-numbers into their digit representation.
+Covers all possibilities up to millinillion
 
-```"five" => "5"```
+```
+"five" => [ "5" ]
+"Four score and seven years ago..." => [ "4", "7" ]
+```
 
 ## Table of contents
 
