@@ -1,7 +1,8 @@
 const BigNumber = require( "bignumber.js" );
 
 // this needs to be larger than our largest exponenent
-BigNumber.config({ EXPONENTIAL_AT: 10000 });
+// currently largest is hundred millinillion, at 3005
+BigNumber.config({ EXPONENTIAL_AT: 3006 });
 
 /*
 	wordToNumber Class
