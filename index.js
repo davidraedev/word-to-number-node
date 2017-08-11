@@ -26,12 +26,21 @@ function WordToNumber() {
 	this.validate_blacklist = [];
 
 	/*
-		(array) side_char_regex
+		(string) side_char_regex
 			chracters not allowed at the start of a word-number
 			useful for not matching word-numbers inside words like "attend",
 			which would otherwise match the ten
 	*/
 	this.side_char_regex = /[a-z]/i;
+
+	/*
+		(int) max_delim_length
+			max characters allowed between words
+			if this is too high, we can match unrelated word-numbers
+			that just so happen to fit the normal pattern like
+			"one hundred pears, and six grean beans", would match as 106, not [ 100, 6 ]
+	*/
+	this.max_delim_length = 1;
 
 	/*o
 		(array) languages
@@ -330,7 +339,7 @@ WordToNumber.prototype.parseSingle = function( text, is_invalid, pre_allow_inval
 /*
 	splitOne
 		split the first occurrence of a string within a string
-			this is differnet from string.split( needle, 1 ), 
+			this is different from string.split( needle, 1 ), 
 			because it returns the entire last half of the string,
 			not just up to the next match
 */
