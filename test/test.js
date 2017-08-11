@@ -213,6 +213,7 @@ const tests = {
 		{ word: "eighteen hundred and sixty three five thousand one million seven thousand thirty-nine", number: [ "18", "163", "5001", "1007039" ] },
 		{ word: "eighteen one hundred", number: [ "18", "100" ] },
 		{ word: "twenty hundred", number: [ "20", "100" ] },
+		{ word: "I have one hundred apples, and sixty three pears", number: [ "100", "63" ] },
 	]
 }
 
