@@ -64,4 +64,9 @@ setValidatorBlacklist( (array/string) regex )
 //		Blacklist takes precedence over Whitelist
 //		Passing a falsey value will clear this list.
 
+setSideChar( (string) regex )
+//		setSideChar
+//		takes a regex of allowed characters surrounding the word-number
+//		this MUST include *at least* /a-z/i, so that you aren't matching words
+//		like "attend", or "tone", that would otherwise match as 10, and 1
 ```
