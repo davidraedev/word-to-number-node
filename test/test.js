@@ -192,7 +192,7 @@ const tests = {
 		{ word: "forty three", number: [ "43" ] },
 		{ word: "ninety nine", number: [ "99" ] },
 		{ word: "eighty-eight", number: [ "88" ] },
-		{ word: "unattended", number: false },
+		{ word: "eight-eighty-eighty-eight", number: [ "8", "80", "88" ] },
 		{ word: "three hundred seventy-six", number: [ "376" ] },
 		{ word: "five hundred and nine", number: [ "509" ] },
 		{ word: "six thousand four hundred and sixty-two", number: [ "6462" ] },
@@ -296,7 +296,7 @@ describe( "More than one word-number", () => {
 	});
 
 });
-
+/*
 
 const fuzz_chars = "`~!@#$%^&*()-_=+[{]}\|;:'\",<.>/? \t";
 
@@ -331,5 +331,17 @@ describe( "Fuzzing tests", () => {
 		});
 
 	}).timeout( 30000 );
+
+});
+
+*/
+describe( "Regex tests", () => {
+
+	// we're testing a whole lot, so this can take a while
+	it( "Should not replace 'and' in 'thousand'", () => {
+
+		expect( w2n.beforeParseStrip( "thousand and" ) ).to.deep.equal( "thousand" );
+
+	});
 
 });
