@@ -1,4 +1,4 @@
-# word-to-number-node [![Build Status](https://travis-ci.org/daraeman/word-to-number-node.svg?branch=master)](https://travis-ci.org/daraeman/word-to-number-node)
+# WordToNumber (node) [![Build Status](https://travis-ci.org/daraeman/word-to-number-node.svg?branch=master)](https://travis-ci.org/daraeman/word-to-number-node)
 
 ## Convert any phrase word-numbers to all their digitd
 WordToNumber lets you parse any string for all of its word-numbers into an array of their digit representations.
@@ -14,6 +14,10 @@ Covers all possibilities up to millinillion
 - [Usage](#usage)
 - [Languages](#languages)
 - [Validation](#validation)
+- [Scientific Notation](#scientific-notation)
+
+## Installation
+WordToNumber in on npm, so its as simple as ```npm install word-to-number-node```
 
 ## Usage
 The main function you'll be using with WordToNumber is the parse function.  
