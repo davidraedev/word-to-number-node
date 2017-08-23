@@ -1,6 +1,6 @@
 const BigNumber = require( "bignumber.js" );
 
-// this needs to be larger than our largest exponenent
+// this needs to be larger than our largest exponent
 // currently largest is hundred millinillion, at 3005
 BigNumber.config({ EXPONENTIAL_AT: 3006 });
 
@@ -26,12 +26,20 @@ function WordToNumber() {
 	this.validate_blacklist = [];
 
 	/*
-		(string) side_char_regex
-			chracters not allowed at the start of a word-number
+		(regex) side_char_regex
+			characters not allowed at the start of a word-number
 			useful for not matching word-numbers inside words like "attend",
 			which would otherwise match the ten
 	*/
 	this.side_char_regex = /[a-z]/i;
+
+	/*
+		(regex) before_parse_strip_regex
+			allowed delimiters for word-numbers, used to strip them
+			leaving only word-numbers and non-allowed characters
+			currently strips: spaces, periods, commas, dashes, and "and"s
+	*/
+	this.before_parse_strip_regex = /(\s+|\.|,|-|\s?and\s?)/ig;
 
 	/*
 		(int) max_delim_length
@@ -161,6 +169,8 @@ function WordToNumber() {
 		}
 	};
 
+	this.all_word_numbers = Object.keys( this.languages[ this.language ].single ).concat( Object.keys( this.languages[ this.language ].tens ), Object.keys( this.languages[ this.language ].large ) );
+
 }
 
 /*
@@ -286,7 +296,7 @@ WordToNumber.prototype.parseSingle = function( text, is_invalid, pre_allow_inval
 			
 			if ( this.is_first ) {
 
-				if ( pos !== 0 && ! this.isValidSideChar( text[ pos - 1 ] ) )
+				if ( pos !== 0 && ! this.isValidSideChar( text.substring( 0, pos ), "start" ) )
 					is_invalid = true;
 				else if ( pos === 0 || pre_allow_invalid )
 					is_invalid = false;
@@ -332,6 +342,7 @@ WordToNumber.prototype.parseSingle = function( text, is_invalid, pre_allow_inval
 		}
 	}
 
+
 	return list;
 
 };
@@ -359,10 +370,13 @@ WordToNumber.prototype.splitOne = function( haystack, string ) {
 		If a tens is found, it will continue and try to match the single place,
 		otherwise will return false;
 */
+let level = 0;
 WordToNumber.prototype.parseTens = function( text, is_invalid, pre_allow_invalid ) {
 
 	if ( pre_allow_invalid )
 		this.is_first = true;
+
+	let original = ( " " + text ).slice( 1 );
 
 	let tens = this.languages[ this.language ].tens;
 	let list = [];
@@ -374,9 +388,10 @@ WordToNumber.prototype.parseTens = function( text, is_invalid, pre_allow_invalid
 		let val = new BigNumber( tens[ word ] );
 		while ( ( pos = text.indexOf( word ) ) !== -1 ) {
 
+
 			if ( this.is_first ) {
 
-				if ( pos !== 0 && ! this.isValidSideChar( text[ pos - 1 ] ) )
+				if ( pos !== 0 && ! this.isValidSideChar( text.substring( 0, pos ), "start" ) )
 					is_invalid = true;
 				else if ( pos === 0 || pre_allow_invalid )
 					is_invalid = false;
@@ -391,6 +406,7 @@ WordToNumber.prototype.parseTens = function( text, is_invalid, pre_allow_invalid
 			let pre_word;
 			let post_word;
 
+
 			if ( parts[0] && parts.length > 1 )
 				pre_word = parts[0];
 			else
@@ -399,28 +415,34 @@ WordToNumber.prototype.parseTens = function( text, is_invalid, pre_allow_invalid
 			if ( parts[1] )
 				post_word = parts[1];
 
+			text = text.replace( word, "" );
+
+
 			// if we have a pre-word, and it parses, then it is a separate number
 			if ( pre_word ) {
 				break_pre = this.parseTens( pre_word, is_invalid, pre_allow_invalid );
-				if ( break_pre.length )
-					list = list.concat( break_pre );
-				text = text.replace( pre_word, "" );
+				if ( break_pre.list.length )
+					list = list.concat( break_pre.list );
+				text = this.splitOne( text, pre_word ).join( "" );
 			}
 
+			let break_post = false
 			if ( post_word ) {
 				post = this.parseTens( post_word, is_invalid );
-				text = text.replace( post_word, "" );
+				if ( ! this.isValidSideChar( post_word, "end" ) )
+					break_post = true;
+				text = this.splitOne( text, post_word ).join( "" );
 			}
 
 			let post_push;
-			if ( post && post.length ) {
-				if ( post[0] <= 9 && val >= 20 ) {
-					val = val.plus( post[0] );
-					if ( post.length > 1 )
-						post_push = post.splice( 1 );
+			if ( post && post.list && post.list.length && ! break_post ) {
+				if ( post.list[0] <= 9 && val >= 20 ) {
+					val = val.plus( post.list[0] );
+					if ( post.list.length > 1 )
+						post_push = post.list.splice( 1 );
 				}
 				else {
-					post_push = post;
+					post_push = post.list;
 				}
 			}
 
@@ -430,7 +452,6 @@ WordToNumber.prototype.parseTens = function( text, is_invalid, pre_allow_invalid
 			if ( post_push )
 				list = list.concat( post_push );
 
-			text = text.replace( word, "" );
 		}
 	}
 
@@ -438,7 +459,12 @@ WordToNumber.prototype.parseTens = function( text, is_invalid, pre_allow_invalid
 
 	list = list.concat( singles );
 
-	return list;
+
+	return {
+		list: list,
+		text: text,
+		original: original,
+	};
 };
 
 /*
@@ -458,7 +484,7 @@ WordToNumber.prototype.parseHundreds = function( text, hundred, is_invalid, pre_
 
 		if ( this.is_first ) {
 
-			if ( pos !== 0 && ! this.isValidSideChar( text[ pos - 1 ] ) )
+			if ( pos !== 0 && ! this.isValidSideChar( text.substring( 0, pos ), "start" ) )
 				is_invalid = true;
 			else if ( pos === 0 || pre_allow_invalid )
 				is_invalid = false;
@@ -504,19 +530,28 @@ WordToNumber.prototype.parseHundreds = function( text, hundred, is_invalid, pre_
 			text = text.replace( pre_word, "" );
 		}
 
+
+		let break_post = false
 		if ( post_word ) {
 			post = this.parseHundreds( post_word, null, is_invalid ).list;
 			text = text.replace( post_word, "" );
+			if ( ! this.isValidSideChar( post_word, "end" ) ) {
+				break_post = true;
+			}
 		}
 
-		if ( post && post.length ) {
+		if ( post && post.length && ! break_post ) {
 			if ( post[0] <= 99 ) {
 				val = val.plus( post[0] );
 			}
 		}
+		else if ( break_post ) {
+			post.unshift( "" );
+		}
 
 		if ( ! is_invalid )
 			list.push( val.toString() );
+
 
 		if ( post && post.length > 1 ) {
 			post.splice( 0, 1 );
@@ -528,7 +563,8 @@ WordToNumber.prototype.parseHundreds = function( text, hundred, is_invalid, pre_
 
 	let tens = this.parseTens( text, is_invalid, pre_allow_invalid );
 
-	list = list.concat( tens );
+	list = list.concat( tens.list );
+
 
 	return {
 		list: list,
@@ -537,8 +573,25 @@ WordToNumber.prototype.parseHundreds = function( text, hundred, is_invalid, pre_
 	};
 };
 
-WordToNumber.prototype.isValidSideChar = function( char ) {
-	return ! this.side_char_regex.test( char );
+/*
+	isValidSideChar
+		regex function for testing the characters surrounding the word-number
+*/
+WordToNumber.prototype.isValidSideChar = function( text, side ) {
+	let valid = false;
+	this.all_word_numbers.forEach( ( word ) => {
+		if ( valid )
+			return;
+		let regex = ( side == "start" ) ? new RegExp( word + "$" ) : new RegExp( "^" + word );
+		if ( regex.test( text ) )
+			valid = true;
+	});
+
+	if ( ! valid ) {
+		let char = ( side == "start" ) ? text[ text.length - 1 ] : text[0];
+		valid = ! this.side_char_regex.test( char );
+	}
+	return valid;
 };
 
 /*
@@ -549,6 +602,28 @@ WordToNumber.prototype.isValidSideChar = function( char ) {
 */
 WordToNumber.prototype.setSideChars = function( regex ) {
 	this.side_char_regex = regex;
+};
+
+/*
+	setExponent
+		takes a number that signifies the exponent at which scientific notation starts
+*/
+WordToNumber.prototype.setExponent = function( exponent ) {
+	BigNumber.config({ EXPONENTIAL_AT: exponent });
+};
+
+/*
+	beforeParseStrip
+		regex function to strip out allowed delimiters so we don't have to deal with them
+
+		* we have to use a hacky reverse here because javascript doesn't have negative lookbehinds
+*/
+WordToNumber.prototype.beforeParseStrip = function( str ) {
+	let placeholder = "{WORD_TO_NUMBER_PLACEHOLDER}";
+	str = str.replace( /thousand/g, placeholder );
+	str = str.replace( this.before_parse_strip_regex, "" );
+	str = str.replace( new RegExp( placeholder, "g" ), "thousand" );
+	return str;
 };
 
 WordToNumber.prototype.parseLarge = function( text, is_invalid, pre_allow_invalid ) {
@@ -574,7 +649,7 @@ WordToNumber.prototype.parseLarge = function( text, is_invalid, pre_allow_invali
 
 			if ( this.is_first ) {
 
-				if ( pos !== 0 && ! this.isValidSideChar( text[ pos - 1 ] ) )
+				if ( pos !== 0 && ! this.isValidSideChar( text.substring( 0, pos ), "start" ) )
 					is_invalid = true;
 				else if ( pos === 0 || pre_allow_invalid )
 					is_invalid = false;
@@ -664,7 +739,8 @@ WordToNumber.prototype.parse = function( text ) {
 
 	this.is_first = true;
 
-	let result = this.parseLarge( text, false )
+	let stripped_text = this.beforeParseStrip( text );
+	let result = this.parseLarge( stripped_text, false );
 
 	return ( ! result || result.length === 0 ) ? false : result;
 };

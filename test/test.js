@@ -192,7 +192,8 @@ const tests = {
 		{ word: "forty three", number: [ "43" ] },
 		{ word: "ninety nine", number: [ "99" ] },
 		{ word: "eighty-eight", number: [ "88" ] },
-		{ word: "unattended", number: false },
+		{ word: "eight-eighty-eighty-eight", number: [ "8", "80", "88" ] },
+		{ word: "eight eighty eight ", number: [ "8", "88" ] },
 		{ word: "three hundred seventy-six", number: [ "376" ] },
 		{ word: "five hundred and nine", number: [ "509" ] },
 		{ word: "six thousand four hundred and sixty-two", number: [ "6462" ] },
@@ -214,6 +215,10 @@ const tests = {
 		{ word: "eighteen one hundred", number: [ "18", "100" ] },
 		{ word: "twenty hundred", number: [ "20", "100" ] },
 		{ word: "I have one hundred apples, and sixty three pears", number: [ "100", "63" ] },
+	],
+	scientific_notation: [
+		{ word: "one hundred thousand", number: [ "1e+5" ] },
+		{ word: "eight million", number: [ "8e+6" ] },
 	]
 }
 
@@ -297,39 +302,28 @@ describe( "More than one word-number", () => {
 
 });
 
-
-const fuzz_chars = "`~!@#$%^&*()-_=+[{]}\|;:'\",<.>/? \t";
-
-function fuzz( input, expected, callback ) {
-	for ( let i = 0, len = fuzz_chars.length; i < len; i++ ) {
-
-		let fuzzed_input = input + fuzz_chars[ i ];
-		callback( fuzzed_input, expected );
-
-		fuzzed_input = fuzz_chars[ i ] + input;
-		callback( fuzzed_input, expected );
-
-		fuzzed_input = fuzz_chars[ i ] + input + fuzz_chars[ i ];
-		callback( fuzzed_input, expected );
-
-	}
-}
-
-describe( "Fuzzing tests", () => {
+describe( "Regex tests", () => {
 
 	// we're testing a whole lot, so this can take a while
-	it( "Should have the correct number", () => {
+	it( "Should not replace 'and' in 'thousand'", () => {
 
-		const combined_tests = tests.basic_single.concat( tests.basic_tens, tests.basic_large, tests.basic_extended );
-		
-		combined_tests.forEach( ( test ) => {
+		expect( w2n.beforeParseStrip( "thousand and" ) ).to.deep.equal( "thousand" );
 
-			fuzz( test.word, test.number, ( input, expected ) => {
-				expect( w2n.parse( input ) ).to.deep.equal( expected );
-			});
+	});
 
+});
+
+describe( "Scientific notation", () => {
+
+	// we're testing a whole lot, so this can take a while
+	it( "Should parse into scientific notation", () => {
+
+		w2n.setExponent( 3 );
+
+		tests.scientific_notation.forEach( ( test ) => {
+			expect( w2n.parse( test.word ) ).to.deep.equal( test.number );
 		});
 
-	}).timeout( 30000 );
+	});
 
 });
