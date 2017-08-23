@@ -193,6 +193,7 @@ const tests = {
 		{ word: "ninety nine", number: [ "99" ] },
 		{ word: "eighty-eight", number: [ "88" ] },
 		{ word: "eight-eighty-eighty-eight", number: [ "8", "80", "88" ] },
+		{ word: "eight eighty eight ", number: [ "8", "88" ] },
 		{ word: "three hundred seventy-six", number: [ "376" ] },
 		{ word: "five hundred and nine", number: [ "509" ] },
 		{ word: "six thousand four hundred and sixty-two", number: [ "6462" ] },
@@ -296,45 +297,7 @@ describe( "More than one word-number", () => {
 	});
 
 });
-/*
 
-const fuzz_chars = "`~!@#$%^&*()-_=+[{]}\|;:'\",<.>/? \t";
-
-function fuzz( input, expected, callback ) {
-	for ( let i = 0, len = fuzz_chars.length; i < len; i++ ) {
-
-		let fuzzed_input = input + fuzz_chars[ i ];
-		callback( fuzzed_input, expected );
-
-		fuzzed_input = fuzz_chars[ i ] + input;
-		callback( fuzzed_input, expected );
-
-		fuzzed_input = fuzz_chars[ i ] + input + fuzz_chars[ i ];
-		callback( fuzzed_input, expected );
-
-	}
-}
-
-describe( "Fuzzing tests", () => {
-
-	// we're testing a whole lot, so this can take a while
-	it( "Should have the correct number", () => {
-
-		const combined_tests = tests.basic_single.concat( tests.basic_tens, tests.basic_large, tests.basic_extended );
-		
-		combined_tests.forEach( ( test ) => {
-
-			fuzz( test.word, test.number, ( input, expected ) => {
-				expect( w2n.parse( input ) ).to.deep.equal( expected );
-			});
-
-		});
-
-	}).timeout( 30000 );
-
-});
-
-*/
 describe( "Regex tests", () => {
 
 	// we're testing a whole lot, so this can take a while
