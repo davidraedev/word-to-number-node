@@ -1,6 +1,6 @@
 {
   "name": "word-to-number-node",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Convert word-phrases to a string of digits",
   "author": "David Rae",
   "license": "MIT",
