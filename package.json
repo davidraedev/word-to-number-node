@@ -1,7 +1,10 @@
 {
   "name": "word-to-number-node",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Convert word-phrases to a string of digits",
+  "author": "David Rae",
+  "license": "MIT",
+  "homepage": "https://github.com/daraeman/word-to-number-node#readme",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
@@ -10,12 +13,10 @@
     "type": "git",
     "url": "git+https://github.com/daraeman/word-to-number-node.git"
   },
-  "author": "David Rae",
-  "license": "MIT",
+
   "bugs": {
     "url": "https://github.com/daraeman/word-to-number-node/issues"
   },
-  "homepage": "https://github.com/daraeman/word-to-number-node#readme",
   "devDependencies": {
     "chai": "^4.0.1",
     "mocha": "^3.4.2"
