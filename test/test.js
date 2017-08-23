@@ -215,6 +215,10 @@ const tests = {
 		{ word: "eighteen one hundred", number: [ "18", "100" ] },
 		{ word: "twenty hundred", number: [ "20", "100" ] },
 		{ word: "I have one hundred apples, and sixty three pears", number: [ "100", "63" ] },
+	],
+	scientific_notation: [
+		{ word: "one hundred thousand", number: [ "1e+5" ] },
+		{ word: "eight million", number: [ "8e+6" ] },
 	]
 }
 
@@ -304,6 +308,21 @@ describe( "Regex tests", () => {
 	it( "Should not replace 'and' in 'thousand'", () => {
 
 		expect( w2n.beforeParseStrip( "thousand and" ) ).to.deep.equal( "thousand" );
+
+	});
+
+});
+
+describe( "Scientific notation", () => {
+
+	// we're testing a whole lot, so this can take a while
+	it( "Should parse into scientific notation", () => {
+
+		w2n.setExponent( 3 );
+
+		tests.scientific_notation.forEach( ( test ) => {
+			expect( w2n.parse( test.word ) ).to.deep.equal( test.number );
+		});
 
 	});
 

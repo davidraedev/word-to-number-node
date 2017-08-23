@@ -1,6 +1,6 @@
 const BigNumber = require( "bignumber.js" );
 
-// this needs to be larger than our largest exponenent
+// this needs to be larger than our largest exponent
 // currently largest is hundred millinillion, at 3005
 BigNumber.config({ EXPONENTIAL_AT: 3006 });
 
@@ -168,6 +168,8 @@ function WordToNumber() {
 			}
 		}
 	};
+
+	this.all_word_numbers = Object.keys( this.languages[ this.language ].single ).concat( Object.keys( this.languages[ this.language ].tens ), Object.keys( this.languages[ this.language ].large ) );
 
 }
 
@@ -576,9 +578,8 @@ WordToNumber.prototype.parseHundreds = function( text, hundred, is_invalid, pre_
 		regex function for testing the characters surrounding the word-number
 */
 WordToNumber.prototype.isValidSideChar = function( text, side ) {
-	let all_word_numbers = Object.keys( this.languages[ this.language ].single ).concat( Object.keys( this.languages[ this.language ].tens ), Object.keys( this.languages[ this.language ].large ) );
 	let valid = false;
-	all_word_numbers.forEach( ( word ) => {
+	this.all_word_numbers.forEach( ( word ) => {
 		if ( valid )
 			return;
 		let regex = ( side == "start" ) ? new RegExp( word + "$" ) : new RegExp( "^" + word );
@@ -601,6 +602,14 @@ WordToNumber.prototype.isValidSideChar = function( text, side ) {
 */
 WordToNumber.prototype.setSideChars = function( regex ) {
 	this.side_char_regex = regex;
+};
+
+/*
+	setExponent
+		takes a number that signifies the exponent at which scientific notation starts
+*/
+WordToNumber.prototype.setExponent = function( exponent ) {
+	BigNumber.config({ EXPONENTIAL_AT: exponent });
 };
 
 /*
@@ -712,7 +721,6 @@ WordToNumber.prototype.parseLarge = function( text, is_invalid, pre_allow_invali
 	text = text.replace( hundreds.original, "" );
 
 	list = list.concat( hundreds.list );
-
 
 	return list;
 };
