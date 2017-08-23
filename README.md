@@ -1,7 +1,7 @@
 # word-to-number-node [![Build Status](https://travis-ci.org/daraeman/word-to-number-node.svg?branch=master)](https://travis-ci.org/daraeman/word-to-number-node)
 
-## Convert any word-number to a number
-WordToNumber lets you parse any string for all of its word-numbers into their digit representation.
+## Convert any phrase word-numbers to all their digitd
+WordToNumber lets you parse any string for all of its word-numbers into an array of their digit representations.
 Covers all possibilities up to millinillion
 
 ```
@@ -68,4 +68,12 @@ setSideChars( (string) regex )
 //		takes a regex of allowed characters surrounding the word-number
 //		this MUST include *at least* /a-z/i, so that you aren't matching words
 //		like "attend", or "tone", that would otherwise match as 10, and 1
+```
+
+## Scientific Notation
+Optionally output scientific notation at the specified exponent level
+
+```js
+setExponent ( number )
+//		takes a number that signifies the exponent at which scientific notation starts
 ```
